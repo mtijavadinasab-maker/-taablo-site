@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تابلو | داشبورد تحلیل اقتصادی</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Ticker tape: signature element -->
+  <div class="ticker-wrap">
+    <div class="ticker" id="ticker">
+      <span>در حال دریافت داده‌های بازار...</span>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="wrap">
+      <div class="brand">
+        <span class="brand-mark">ت</span>
+        <div class="brand-text">
+          <h1>تابلو</h1>
+          <p>رصد و تحلیل روند اقتصادی و سیاسی</p>
+        </div>
+      </div>
+      <div class="header-note">
+        <span class="dot"></span>
+        داده زنده · به‌روزرسانی هر ۶۰ ثانیه
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <section class="cards" id="cards">
+      <!-- currency/gold cards injected by script.js -->
+    </section>
+
+    <section class="panel trend-panel">
+      <div class="panel-head">
+        <h2>روند نرخ دلار <span class="eyebrow">۳۰ روز گذشته</span></h2>
+      </div>
+      <canvas id="trendChart" height="110"></canvas>
+      <p class="panel-note">این نمودار بر اساس نرخ رسمی ارز است، نه نرخ بازار آزاد. برای داده دقیق‌تر باید منبع داخلی جایگزین شود (به README مراجعه کنید).</p>
+    </section>
+
+    <section class="panel signals-panel">
+      <div class="panel-head">
+        <h2>سیگنال‌های اقتصادی <span class="eyebrow">نمونه — داده واقعی جایگزین می‌شود</span></h2>
+      </div>
+      <div class="signals" id="signals"></div>
+    </section>
+
+    <section class="panel scenario-panel">
+      <div class="panel-head">
+        <h2>تحلیل سناریو</h2>
+      </div>
+      <div class="scenario-grid" id="scenarios"></div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>پروژه «تابلو» — پروژه دانشجویی مدیریت صنعتی. نسخه ۰.۱ (فاز داشبورد داده). نقشه راه کامل در README.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
