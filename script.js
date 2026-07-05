@@ -18,11 +18,19 @@ const RATES_API = "https://open.er-api.com/v6/latest/USD";
 const HISTORY_API = (start, end) =>
   `https://api.frankfurter.app/${start}..${end}?from=USD&to=EUR`;
 
+// --- نرخ واقعی بازار ایران (دلار/طلا/سکه) از BrsApi ---
+// یک کلید رایگان (تا ۱۵۰۰ درخواست در روز) از brsapi.ir بگیر و همینجا جایگزین کن.
+// اگه کلید نگذاری، این بخش به‌صورت خودکار داده نمونه نشون می‌ده تا سایت خراب نشه.
+const BRSAPI_KEY = "BvyHfrNEsPrp6c3L1jhtRVHLFcu5x85k";
+const BRSAPI_URL = `https://BrsApi.ir/Api/Market/Gold_Currency.php?key=${BRSAPI_KEY}`;
+// اگه به‌خاطر محدودیت CORS مرورگر مستقیم به BrsApi وصل نشد، از این پروکسی عمومی
+// به‌عنوان پشتیبان استفاده می‌کنیم (برای سایت‌های شخصی/آموزشی مشکلی ندارد).
+const CORS_FALLBACK = (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+
 const CURRENCIES = [
   { code: "EUR", label: "یورو / دلار" },
   { code: "GBP", label: "پوند / دلار" },
   { code: "TRY", label: "لیر ترکیه / دلار" },
-  { code: "IRR", label: "ریال (نرخ رسمی)" },
 ];
 
 function todayISO(offsetDays = 0) {
@@ -71,6 +79,81 @@ function renderCards(rates) {
 
 function formatNumber(n) {
   return Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+// نمونه داده برای زمانی که کلید تنظیم نشده یا درخواست شکست بخورد
+const SAMPLE_IRR_ITEMS = [
+  { name: "دلار آمریکا", price: 610000, unit: "تومان" },
+  { name: "طلای ۱۸ عیار (گرم)", price: 6200000, unit: "تومان" },
+  { name: "سکه امامی", price: 42000000, unit: "تومان" },
+];
+
+async function fetchIrrData() {
+  const note = document.getElementById("irr-note");
+
+  if (!BRSAPI_KEY || BRSAPI_KEY === "YOUR_API_KEY") {
+    note.textContent =
+      "⚠️ هنوز کلید BrsApi تنظیم نشده — داده نمونه نشان داده می‌شود. کلید رایگان را از brsapi.ir بگیر و در script.js جای YOUR_API_KEY بگذار.";
+    return SAMPLE_IRR_ITEMS;
+  }
+
+  const tryFetch = async (url) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  };
+
+  let raw;
+  try {
+    raw = await tryFetch(BRSAPI_URL);
+  } catch (err1) {
+    console.warn("درخواست مستقیم به BrsApi ناموفق بود، تلاش با پروکسی CORS:", err1);
+    try {
+      raw = await tryFetch(CORS_FALLBACK(BRSAPI_URL));
+    } catch (err2) {
+      console.error("درخواست با پروکسی هم ناموفق بود:", err2);
+      note.textContent =
+        "⚠️ اتصال به BrsApi ناموفق بود (به Console مرورگر نگاه کن). فعلاً داده نمونه نشان داده می‌شود.";
+      return SAMPLE_IRR_ITEMS;
+    }
+  }
+
+  console.log("پاسخ خام BrsApi (برای بررسی ساختار داده):", raw);
+
+  // ساختار دقیق پاسخ ممکن است کمی فرق داشته باشد؛ چند حالت رایج را امتحان می‌کنیم.
+  const items = [];
+  const pools = [raw.gold, raw.currency, raw.data, raw.result, raw].filter(Array.isArray);
+  const list = pools.length ? pools.flat() : [];
+
+  if (!list.length) {
+    note.textContent =
+      "⚠️ داده از BrsApi رسید ولی ساختار آن با کد فعلی هم‌خوان نبود. جزئیات در Console مرورگر است — همان را برای من بفرست تا تنظیمش کنم.";
+    return SAMPLE_IRR_ITEMS;
+  }
+
+  list.forEach((item) => {
+    const name = item.name || item.name_fa || item.symbol || "نامشخص";
+    const price = item.price || item.value || item.close || null;
+    if (name && price) items.push({ name, price, unit: "تومان" });
+  });
+
+  if (!items.length) return SAMPLE_IRR_ITEMS;
+
+  note.textContent = "منبع: BrsApi.ir — به‌روزرسانی لحظه‌ای بازار آزاد.";
+  return items.slice(0, 6);
+}
+
+function renderIrrCards(items) {
+  document.getElementById("irr-cards").innerHTML = items
+    .map(
+      (it) => `
+      <div class="card">
+        <div class="label">${it.name}</div>
+        <div class="value mono">${formatNumber(it.price)}</div>
+        <div class="change">${it.unit}</div>
+      </div>`
+    )
+    .join("");
 }
 
 async function renderTrendChart() {
@@ -185,4 +268,8 @@ function renderScenarios() {
   renderTrendChart();
   renderSignals();
   renderScenarios();
+
+  const irrItems = await fetchIrrData();
+  renderIrrCards(irrItems);
 })();
+
